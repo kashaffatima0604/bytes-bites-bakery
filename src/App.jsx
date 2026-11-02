@@ -8,11 +8,22 @@ import {
   Routes,
   useLocation,
   useParams,
-  useNavigate,
+  useNavigate
 } from 'react-router-dom';
 
-import { products, categories } from './data/products.js';
+import { products as defaultProducts, categories } from './data/products.js';
 import './App.css';
+
+// ================= LOCAL STORAGE =================
+
+function getSavedData(key, fallback) {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 // ================= HEADER =================
 
@@ -26,7 +37,6 @@ function Header({ cartCount }) {
       </div>
 
       <header className="navbar">
-
         <Link className="brand" to="/">
           🍰 BYTES<span className="brand-highlight">-BITES</span>
           <small>BAKERY &amp; SWEETS</small>
@@ -41,7 +51,6 @@ function Header({ cartCount }) {
         </nav>
 
         <div className="header-actions">
-
           <button
             type="button"
             className="category-toggle"
@@ -57,12 +66,10 @@ function Header({ cartCount }) {
           <Link className="cart-link" to="/cart">
             🛍️ Cart ({cartCount})
           </Link>
-
         </div>
 
         {menuOpen && (
           <div className="dropdown-menu">
-
             {categories.map((category) => (
               <Link
                 key={category}
@@ -76,10 +83,8 @@ function Header({ cartCount }) {
                 {category}
               </Link>
             ))}
-
           </div>
         )}
-
       </header>
     </>
   );
@@ -87,17 +92,12 @@ function Header({ cartCount }) {
 
 // ================= HOME PAGE =================
 
-function HomePage({ onAdd }) {
+function HomePage({ productList, onAdd }) {
   return (
     <main>
-
       <section className="hero-section">
-
         <div className="hero-content">
-
-          <span className="eyebrow">
-            ♡ BAKED FRESH DAILY ♡
-          </span>
+          <span className="eyebrow">♡ BAKED FRESH DAILY ♡</span>
 
           <h1>
             A Little Slice
@@ -113,13 +113,11 @@ function HomePage({ onAdd }) {
           <Link className="primary-btn" to="/shop">
             Explore Our Bakery ↗
           </Link>
-
         </div>
 
         <div className="hero-art">
           <span>🎂</span>
         </div>
-
       </section>
 
       <section className="features">
@@ -130,14 +128,13 @@ function HomePage({ onAdd }) {
       </section>
 
       <section className="shop-section">
-
         <div className="section-heading">
           <span className="eyebrow">OUR BESTSELLERS</span>
           <h2>Our <span>Sweet</span> Favorites</h2>
         </div>
 
         <ProductGrid
-          products={products.slice(0, 4)}
+          products={productList.slice(0, 4)}
           onAdd={onAdd}
         />
 
@@ -146,9 +143,7 @@ function HomePage({ onAdd }) {
             Shop All Products →
           </Link>
         </div>
-
       </section>
-
     </main>
   );
 }
@@ -158,30 +153,27 @@ function HomePage({ onAdd }) {
 function ProductGrid({ products: list, onAdd }) {
   return (
     <div className="product-grid">
-
       {list.map((product) => (
         <article className="product-card" key={product.id}>
-
           <Link
             className="product-image"
-            style={{ backgroundColor: product.color }}
+            style={{ backgroundColor: product.color || '#fff8f0' }}
             to={`/product/${product.id}`}
           >
-
-            {product.image && (
+            {product.image ? (
               <img
                 src={product.image}
                 alt={product.name}
                 className="product-photo"
               />
+            ) : (
+              <span>{product.emoji || '🍰'}</span>
             )}
 
             <span className="product-tag">FRESH</span>
-
           </Link>
 
           <div className="product-info">
-
             <span className="product-category">
               {product.category}
             </span>
@@ -194,9 +186,8 @@ function ProductGrid({ products: list, onAdd }) {
             </Link>
 
             <div className="product-bottom">
-
               <strong>
-                Rs. {product.price.toLocaleString('en-PK')}
+                Rs. {Number(product.price).toLocaleString('en-PK')}
               </strong>
 
               <button
@@ -206,38 +197,29 @@ function ProductGrid({ products: list, onAdd }) {
               >
                 +
               </button>
-
             </div>
-
           </div>
-
         </article>
       ))}
-
     </div>
   );
 }
 
 // ================= SHOP PAGE =================
 
-function ShopPage({ onAdd }) {
+function ShopPage({ productList, onAdd }) {
   const location = useLocation();
 
   const params = new URLSearchParams(location.search);
-
-  const requestedCategory =
-    params.get('category') || 'All Products';
+  const requestedCategory = params.get('category') || 'All Products';
 
   const [category, setCategory] = useState(requestedCategory);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('featured');
-
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-
   const [appliedMin, setAppliedMin] = useState('');
   const [appliedMax, setAppliedMax] = useState('');
-
   const [categoryOpen, setCategoryOpen] = useState(true);
   const [priceOpen, setPriceOpen] = useState(true);
 
@@ -252,116 +234,84 @@ function ShopPage({ onAdd }) {
   function chooseCategory(item) {
     setCategory(item);
 
-    const newUrl =
-      item === 'All Products'
-        ? '/shop'
-        : `/shop?category=${encodeURIComponent(item)}`;
+    const newUrl = item === 'All Products'
+      ? '/shop'
+      : `/shop?category=${encodeURIComponent(item)}`;
 
     window.history.replaceState({}, '', newUrl);
   }
 
   function applyPriceFilter() {
-    const min = minPrice.trim();
-    const max = maxPrice.trim();
-
     if (
-      (min !== '' && Number(min) < 0) ||
-      (max !== '' && Number(max) < 0)
+      (minPrice !== '' && Number(minPrice) < 0) ||
+      (maxPrice !== '' && Number(maxPrice) < 0)
     ) {
       alert('Price cannot be negative.');
       return;
     }
 
     if (
-      min !== '' &&
-      max !== '' &&
-      Number(min) > Number(max)
+      minPrice !== '' &&
+      maxPrice !== '' &&
+      Number(minPrice) > Number(maxPrice)
     ) {
       alert('From price cannot be greater than To price.');
       return;
     }
 
-    setAppliedMin(min);
-    setAppliedMax(max);
+    setAppliedMin(minPrice);
+    setAppliedMax(maxPrice);
   }
 
   function clearFilters() {
     setCategory('All Products');
     setSearch('');
     setSort('featured');
-
     setMinPrice('');
     setMaxPrice('');
-
     setAppliedMin('');
     setAppliedMax('');
 
     window.history.replaceState({}, '', '/shop');
   }
 
-  const filtered = products
+  const filtered = productList
     .filter((product) => {
-
       const matchesCategory =
         category === 'All Products' ||
         product.category === category;
 
       const matchesSearch =
-        product.name.toLowerCase().includes(
-          search.toLowerCase().trim()
-        );
+        product.name.toLowerCase().includes(search.toLowerCase().trim());
 
       const matchesMin =
-        appliedMin === '' ||
-        product.price >= Number(appliedMin);
+        appliedMin === '' || product.price >= Number(appliedMin);
 
       const matchesMax =
-        appliedMax === '' ||
-        product.price <= Number(appliedMax);
+        appliedMax === '' || product.price <= Number(appliedMax);
 
-      return (
-        matchesCategory &&
-        matchesSearch &&
-        matchesMin &&
-        matchesMax
-      );
+      return matchesCategory && matchesSearch && matchesMin && matchesMax;
     })
     .sort((a, b) => {
-
       if (sort === 'low') return a.price - b.price;
-
       if (sort === 'high') return b.price - a.price;
-
-      if (sort === 'name') {
-        return a.name.localeCompare(b.name);
-      }
-
+      if (sort === 'name') return a.name.localeCompare(b.name);
       return a.id - b.id;
     });
 
   return (
     <main className="shop-section page-section">
-
       <div className="section-heading">
-
-        <span className="eyebrow">
-          FRESH FROM OUR BAKERY
-        </span>
-
+        <span className="eyebrow">FRESH FROM OUR BAKERY</span>
         <h1>Shop <span>All Treats</span></h1>
-
         <p>Find your next favourite sweet treat.</p>
-
       </div>
 
       <div className="shop-layout">
-
         <aside className="shop-sidebar">
-
           <h2>Filter Products</h2>
 
           <div className="filter-box">
-
             <button
               type="button"
               className="filter-heading"
@@ -373,27 +323,21 @@ function ShopPage({ onAdd }) {
 
             {categoryOpen && (
               <div className="filter-options">
-
                 {categories.map((item) => (
                   <button
                     type="button"
                     key={item}
-                    className={
-                      category === item ? 'selected-filter' : ''
-                    }
+                    className={category === item ? 'selected-filter' : ''}
                     onClick={() => chooseCategory(item)}
                   >
                     {item}
                   </button>
                 ))}
-
               </div>
             )}
-
           </div>
 
           <div className="filter-box">
-
             <button
               type="button"
               className="filter-heading"
@@ -405,10 +349,8 @@ function ShopPage({ onAdd }) {
 
             {priceOpen && (
               <div className="price-filter">
-
                 <label>
                   From (Rs.)
-
                   <input
                     type="number"
                     min="0"
@@ -420,7 +362,6 @@ function ShopPage({ onAdd }) {
 
                 <label>
                   To (Rs.)
-
                   <input
                     type="number"
                     min="0"
@@ -437,10 +378,8 @@ function ShopPage({ onAdd }) {
                 >
                   Apply Filter
                 </button>
-
               </div>
             )}
-
           </div>
 
           <button
@@ -450,16 +389,12 @@ function ShopPage({ onAdd }) {
           >
             Clear All Filters
           </button>
-
         </aside>
 
         <div className="shop-products-area">
-
           <div className="shop-toolbar">
-
             <label>
               Search products
-
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -469,7 +404,6 @@ function ShopPage({ onAdd }) {
 
             <label>
               Sort by
-
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
@@ -480,7 +414,6 @@ function ShopPage({ onAdd }) {
                 <option value="name">Name: A to Z</option>
               </select>
             </label>
-
           </div>
 
           <p className="results-count">
@@ -488,20 +421,11 @@ function ShopPage({ onAdd }) {
           </p>
 
           {filtered.length > 0 ? (
-
-            <ProductGrid
-              products={filtered}
-              onAdd={onAdd}
-            />
-
+            <ProductGrid products={filtered} onAdd={onAdd} />
           ) : (
-
             <div className="empty-results">
-
               <h3>No products found</h3>
-
               <p>Try another category or price range.</p>
-
               <button
                 type="button"
                 className="secondary-btn"
@@ -509,72 +433,55 @@ function ShopPage({ onAdd }) {
               >
                 Clear Filters
               </button>
-
             </div>
-
           )}
-
         </div>
-
       </div>
-
     </main>
   );
 }
 
 // ================= PRODUCT DETAILS =================
 
-function ProductPage({ onAdd }) {
+function ProductPage({ productList, onAdd }) {
   const { id } = useParams();
 
-  const product = products.find(
-    (item) => item.id === Number(id)
+  const product = productList.find(
+    (item) => String(item.id) === String(id)
   );
 
   if (!product) {
     return (
       <main className="page-section">
-
         <h1>Product not found</h1>
-
         <Link className="primary-btn" to="/shop">
           Back to Shop
         </Link>
-
       </main>
     );
   }
 
   return (
     <main className="product-detail page-section">
-
       <div
         className="detail-image"
-        style={{ backgroundColor: product.color }}
+        style={{ backgroundColor: product.color || '#fff8f0' }}
       >
-
-        {product.image && (
+        {product.image ? (
           <img
             src={product.image}
             alt={product.name}
             className="product-photo"
           />
+        ) : (
+          <span>{product.emoji || '🍰'}</span>
         )}
-
       </div>
 
       <div className="detail-info">
-
-        <span className="eyebrow">
-          {product.category}
-        </span>
-
+        <span className="eyebrow">{product.category}</span>
         <h1>{product.name}</h1>
-
-        <h2>
-          Rs. {product.price.toLocaleString('en-PK')}
-        </h2>
-
+        <h2>Rs. {Number(product.price).toLocaleString('en-PK')}</h2>
         <p>{product.description}</p>
 
         <button
@@ -585,12 +492,8 @@ function ProductPage({ onAdd }) {
           Add to Cart
         </button>
 
-        <p>
-          <Link to="/shop">← Continue shopping</Link>
-        </p>
-
+        <p><Link to="/shop">← Continue shopping</Link></p>
       </div>
-
     </main>
   );
 }
@@ -603,7 +506,7 @@ function CustomCakePage() {
   const [theme, setTheme] = useState('Birthday');
   const [toppers, setToppers] = useState([]);
   const [message, setMessage] = useState('');
-  const [referenceImages, setReferenceImages] = useState([]);
+  const [referenceImage, setReferenceImage] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
   function handleToppers(e) {
@@ -618,110 +521,98 @@ function CustomCakePage() {
     }
   }
 
-  function handleImages(e) {
-    const files = Array.from(e.target.files || []);
-    setReferenceImages(files);
+  function handleImageChange(e) {
+    const file = e.target.files[0];
+
+    if (!file) {
+      setReferenceImage(null);
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image.');
+      e.target.value = '';
+      setReferenceImage(null);
+      return;
+    }
+
+    setReferenceImage(file);
   }
 
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (referenceImages.length < 2) {
-      alert('Please upload at least 2 reference images.');
-      return;
-    }
-
-    const customCakeRequest = {
+    const request = {
       icingColor,
       flavour,
       theme,
       toppers,
       message,
-      imageNames: referenceImages.map((file) => file.name),
+      imageName: referenceImage ? referenceImage.name : '',
       requestDate: new Date().toLocaleString()
     };
 
     localStorage.setItem(
       'bakeryCustomCakeRequest',
-      JSON.stringify(customCakeRequest)
+      JSON.stringify(request)
     );
 
     setSubmitted(true);
   }
 
+  function resetForm() {
+    setSubmitted(false);
+    setReferenceImage(null);
+    setToppers([]);
+    setMessage('');
+    setIcingColor('#f4b6c2');
+    setFlavour('Chocolate');
+    setTheme('Birthday');
+  }
+
   return (
     <main className="page-section custom-cake-page">
-
       <div className="section-heading">
-
-        <span className="eyebrow">
-          DESIGN YOUR DREAM CAKE
-        </span>
-
+        <span className="eyebrow">DESIGN YOUR DREAM CAKE</span>
         <h1>Customize Your <span>Cake</span></h1>
-
-        <p>
-          Create a cake that matches your special occasion!
-        </p>
-
+        <p>Create a cake that matches your special occasion!</p>
       </div>
 
       {submitted ? (
-
         <div className="custom-success">
-
           <h2>Thank You! 🎂</h2>
-
+          <p>Your custom cake request has been saved in this browser.</p>
           <p>
-            Your custom cake request has been saved in this browser.
-          </p>
-
-          <p>
-            This is a frontend demo. The request is not yet sent
-            to the bakery or saved in a database.
+            This is a frontend demo. The request is not yet sent to the bakery.
           </p>
 
           <button
             className="primary-btn"
             type="button"
-            onClick={() => {
-              setSubmitted(false);
-              setReferenceImages([]);
-              setToppers([]);
-              setMessage('');
-            }}
+            onClick={resetForm}
           >
             Create Another Cake
           </button>
-
         </div>
-
       ) : (
-
         <form
           className="custom-cake-form"
           onSubmit={handleSubmit}
         >
-
           <label>
             Choose Icing Color
-
             <div className="color-picker">
-
               <input
                 type="color"
                 value={icingColor}
                 onChange={(e) => setIcingColor(e.target.value)}
               />
-
               <span>{icingColor}</span>
-
             </div>
           </label>
 
           <label>
             Select Cake Flavour
-
             <select
               value={flavour}
               onChange={(e) => setFlavour(e.target.value)}
@@ -737,7 +628,6 @@ function CustomCakePage() {
 
           <label>
             Select Cake Theme
-
             <select
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
@@ -754,42 +644,32 @@ function CustomCakePage() {
           </label>
 
           <div className="custom-field">
-
             <h3>Choose Cake Toppers</h3>
 
             <div className="toppers-options">
-
               {[
                 'Flowers',
                 'Stars',
                 'Hearts',
                 'Candles',
                 'Birthday Topper',
-                'Chocolates',
+                'Chocolates'
               ].map((item) => (
-
                 <label key={item} className="topper-option">
-
                   <input
                     type="checkbox"
                     value={item}
                     checked={toppers.includes(item)}
                     onChange={handleToppers}
                   />
-
                   {item}
-
                 </label>
-
               ))}
-
             </div>
-
           </div>
 
           <label>
             Special Message for Cake
-
             <textarea
               rows="4"
               value={message}
@@ -797,61 +677,28 @@ function CustomCakePage() {
               placeholder="Example: Happy Birthday!"
               required
             />
-
           </label>
 
           <label>
-            Upload Reference Images (Minimum 2)
-
+            Upload Reference Image (Optional)
             <input
               type="file"
               accept="image/*"
-              multiple
-              required
-              onChange={handleImages}
+              onChange={handleImageChange}
             />
-
           </label>
 
-          {referenceImages.length > 0 && (
-
-            <div className="reference-preview">
-
-              <h3>
-                Uploaded Images ({referenceImages.length})
-              </h3>
-
-              <div className="reference-images">
-
-                {referenceImages.map((file, index) => (
-
-                  <div key={`${file.name}-${index}`}>
-
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`Reference ${index + 1}`}
-                    />
-
-                    <p>{file.name}</p>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            </div>
-
-          )}
+          <p>
+            {referenceImage
+              ? `Selected image: ${referenceImage.name}`
+              : 'No reference image selected (Optional)'}
+          </p>
 
           <button type="submit" className="primary-btn">
             Submit Custom Cake Request →
           </button>
-
         </form>
-
       )}
-
     </main>
   );
 }
@@ -861,15 +708,9 @@ function CustomCakePage() {
 function SimplePage({ title, children }) {
   return (
     <main className="page-section simple-page">
-
-      <span className="eyebrow">
-        BYTES-BITES BAKERY
-      </span>
-
+      <span className="eyebrow">BYTES-BITES BAKERY</span>
       <h1>{title}</h1>
-
       {children}
-
     </main>
   );
 }
@@ -886,12 +727,9 @@ function AuthPage({ signup = false }) {
   function handleAuth(e) {
     e.preventDefault();
 
-    const users = JSON.parse(
-      localStorage.getItem('bakeryUsers') || '[]'
-    );
+    const users = getSavedData('bakeryUsers', []);
 
     if (signup) {
-
       const existingUser = users.find(
         (user) => user.email.toLowerCase() === email.toLowerCase()
       );
@@ -901,33 +739,18 @@ function AuthPage({ signup = false }) {
         return;
       }
 
-      const newUser = {
-        name: name,
-        email: email,
-        password: password
-      };
+      users.push({ name, email, password });
 
-      users.push(newUser);
-
-      localStorage.setItem(
-        'bakeryUsers',
-        JSON.stringify(users)
-      );
+      localStorage.setItem('bakeryUsers', JSON.stringify(users));
 
       localStorage.setItem(
         'bakeryLoggedInUser',
-        JSON.stringify({
-          name: name,
-          email: email
-        })
+        JSON.stringify({ name, email })
       );
 
       alert('Account created successfully!');
-
       navigate('/shop');
-
     } else {
-
       const user = users.find(
         (item) =>
           item.email.toLowerCase() === email.toLowerCase() &&
@@ -941,42 +764,31 @@ function AuthPage({ signup = false }) {
 
       localStorage.setItem(
         'bakeryLoggedInUser',
-        JSON.stringify({
-          name: user.name,
-          email: user.email
-        })
+        JSON.stringify({ name: user.name, email: user.email })
       );
 
       alert('Login successful!');
-
       navigate('/shop');
     }
   }
 
   return (
-    <SimplePage
-      title={signup ? 'Create Your Account' : 'Welcome Back'}
-    >
-
+    <SimplePage title={signup ? 'Create Your Account' : 'Welcome Back'}>
       <form className="auth-form" onSubmit={handleAuth}>
-
         {signup && (
           <label>
             Full Name
-
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your full name"
             />
-
           </label>
         )}
 
         <label>
           Email Address
-
           <input
             required
             type="email"
@@ -984,12 +796,10 @@ function AuthPage({ signup = false }) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
-
         </label>
 
         <label>
           Password
-
           <input
             required
             type="password"
@@ -998,7 +808,6 @@ function AuthPage({ signup = false }) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 8 characters"
           />
-
         </label>
 
         <button className="primary-btn" type="submit">
@@ -1006,30 +815,19 @@ function AuthPage({ signup = false }) {
         </button>
 
         <p>
-          {signup
-            ? 'Already have an account? '
-            : "Don't have an account? "}
-
+          {signup ? 'Already have an account? ' : "Don't have an account? "}
           <Link to={signup ? '/login' : '/signup'}>
             {signup ? 'Login' : 'Sign Up'}
           </Link>
-
         </p>
-
       </form>
-
     </SimplePage>
   );
 }
 
 // ================= CART PAGE =================
 
-function CartPage({
-  cartItems,
-  onIncrease,
-  onDecrease,
-  onCheckout
-}) {
+function CartPage({ cartItems, onIncrease, onDecrease, onCheckout }) {
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -1037,70 +835,41 @@ function CartPage({
 
   return (
     <SimplePage title="Your Shopping Cart">
-
       {cartItems.length === 0 ? (
-
         <>
-          <p>
-            Your cart is empty. Let's find something sweet!
-          </p>
-
-          <Link className="primary-btn" to="/shop">
-            Start Shopping
-          </Link>
+          <p>Your cart is empty. Let's find something sweet!</p>
+          <Link className="primary-btn" to="/shop">Start Shopping</Link>
         </>
-
       ) : (
-
         <>
-
           <div className="cart-page-items">
-
             {cartItems.map((item) => (
-
               <div className="cart-page-item" key={item.id}>
-
                 <span>{item.emoji || '🍰'}</span>
 
                 <div>
-
                   <strong>{item.name}</strong>
-
-                  <p>
-                    Rs. {item.price.toLocaleString('en-PK')}
-                  </p>
-
+                  <p>Rs. {item.price.toLocaleString('en-PK')}</p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onDecrease(item.id)}
-                >
+                <button type="button" onClick={() => onDecrease(item.id)}>
                   -
                 </button>
 
                 <span>{item.quantity}</span>
 
-                <button
-                  type="button"
-                  onClick={() => onIncrease(item.id)}
-                >
+                <button type="button" onClick={() => onIncrease(item.id)}>
                   +
                 </button>
 
                 <strong>
                   Rs. {(item.price * item.quantity).toLocaleString('en-PK')}
                 </strong>
-
               </div>
-
             ))}
-
           </div>
 
-          <h2>
-            Total: Rs. {total.toLocaleString('en-PK')}
-          </h2>
+          <h2>Total: Rs. {total.toLocaleString('en-PK')}</h2>
 
           <button
             className="primary-btn"
@@ -1109,11 +878,8 @@ function CartPage({
           >
             Proceed to Checkout →
           </button>
-
         </>
-
       )}
-
     </SimplePage>
   );
 }
@@ -1128,9 +894,7 @@ function CheckoutPage({ cartItems }) {
     0
   );
 
-  const loggedInUser = JSON.parse(
-    localStorage.getItem('bakeryLoggedInUser') || 'null'
-  );
+  const loggedInUser = getSavedData('bakeryLoggedInUser', null);
 
   function placeOrder(e) {
     e.preventDefault();
@@ -1151,143 +915,547 @@ function CheckoutPage({ cartItems }) {
       orderId: Date.now(),
       customer: loggedInUser,
       items: cartItems,
-      total: total,
+      total,
       orderDate: new Date().toLocaleString(),
       status: 'Order Placed'
     };
 
-    const previousOrders = JSON.parse(
-      localStorage.getItem('bakeryOrders') || '[]'
-    );
-
+    const previousOrders = getSavedData('bakeryOrders', []);
     previousOrders.push(order);
 
-    localStorage.setItem(
-      'bakeryOrders',
-      JSON.stringify(previousOrders)
-    );
+    localStorage.setItem('bakeryOrders', JSON.stringify(previousOrders));
+    localStorage.setItem('bakeryCart', JSON.stringify([]));
 
-    localStorage.removeItem('bakeryCart');
+    alert('Your order has been placed successfully! Thank you for shopping with Bytes-Bites Bakery.');
 
-    alert(
-      'Your order has been placed successfully! Thank you for shopping with Bytes-Bites Bakery.'
-    );
-
-    window.location.href = '/';
+    navigate('/');
+    window.location.reload();
   }
 
   if (!loggedInUser) {
     return (
       <SimplePage title="Login Required">
-
-        <p>
-          Please login before placing your order.
-        </p>
-
-        <Link className="primary-btn" to="/login">
-          Login Now
-        </Link>
-
+        <p>Please login before placing your order.</p>
+        <Link className="primary-btn" to="/login">Login Now</Link>
       </SimplePage>
     );
   }
 
   return (
     <SimplePage title="Checkout">
-
       {cartItems.length === 0 ? (
-
         <>
           <p>Your cart is empty.</p>
-
-          <Link className="primary-btn" to="/shop">
-            Shop Products
-          </Link>
+          <Link className="primary-btn" to="/shop">Shop Products</Link>
         </>
-
       ) : (
-
-        <form
-          className="auth-form checkout-form"
-          onSubmit={placeOrder}
-        >
-
+        <form className="auth-form checkout-form" onSubmit={placeOrder}>
           <h2>Delivery Details</h2>
 
           <label>
             Full Name
-
-            <input
-              required
-              defaultValue={loggedInUser.name}
-            />
-
+            <input required defaultValue={loggedInUser.name} />
           </label>
 
           <label>
             Email
-
-            <input
-              required
-              type="email"
-              defaultValue={loggedInUser.email}
-            />
-
+            <input required type="email" defaultValue={loggedInUser.email} />
           </label>
 
           <label>
             Phone Number
-
-            <input
-              required
-              type="tel"
-              autoComplete="tel"
-            />
-
+            <input required type="tel" autoComplete="tel" />
           </label>
 
           <label>
             Delivery Address
-
-            <textarea
-              required
-              rows="3"
-              autoComplete="street-address"
-            />
-
+            <textarea required rows="3" autoComplete="street-address" />
           </label>
 
           <label>
             Payment Method
-
             <select defaultValue="cod">
               <option value="cod">Cash on Delivery</option>
             </select>
-
           </label>
 
-          <h2>
-            Order Total: Rs. {total.toLocaleString('en-PK')}
-          </h2>
+          <h2>Order Total: Rs. {total.toLocaleString('en-PK')}</h2>
 
           <button className="primary-btn" type="submit">
             Place Order
           </button>
-
         </form>
-
       )}
-
     </SimplePage>
   );
 }
+
+// ================= ADMIN PANEL =================
+
+function AdminPanel({ productList, setProductList }) {
+  const [loggedIn, setLoggedIn] = useState(
+    localStorage.getItem('bakeryAdminLoggedIn') === 'true'
+  );
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [activePage, setActivePage] = useState('dashboard');
+
+  const [orders, setOrders] = useState(() =>
+    getSavedData('bakeryOrders', [])
+  );
+
+  const [customers] = useState(() =>
+    getSavedData('bakeryUsers', [])
+  );
+
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('bakeryOrders', JSON.stringify(orders));
+  }, [orders]);
+
+  function handleLogin(e) {
+    e.preventDefault();
+
+    // Demo admin credentials
+    if (
+      email === 'admin@bytesbites.com' &&
+      password === 'admin123'
+    ) {
+      localStorage.setItem('bakeryAdminLoggedIn', 'true');
+      setLoggedIn(true);
+    } else {
+      alert('Invalid admin email or password!');
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('bakeryAdminLoggedIn');
+    setLoggedIn(false);
+  }
+
+  function clearForm() {
+    setEditingId(null);
+    setName('');
+    setPrice('');
+    setCategory('');
+    setDescription('');
+  }
+
+  function saveProduct(e) {
+    e.preventDefault();
+
+    const newProduct = {
+      id: editingId || Date.now(),
+      name,
+      price: Number(price),
+      category,
+      description,
+      color: '#fff8f0',
+      emoji: '🍰'
+    };
+
+    if (editingId) {
+      setProductList((current) =>
+        current.map((item) =>
+          item.id === editingId ? { ...item, ...newProduct } : item
+        )
+      );
+    } else {
+      setProductList((current) => [...current, newProduct]);
+    }
+
+    clearForm();
+    alert('Product saved successfully!');
+  }
+
+  function editProduct(product) {
+    setEditingId(product.id);
+    setName(product.name);
+    setPrice(product.price);
+    setCategory(product.category);
+    setDescription(product.description || '');
+    setActivePage('products');
+  }
+
+  function deleteProduct(id) {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      setProductList((current) =>
+        current.filter((item) => item.id !== id)
+      );
+    }
+  }
+
+  function updateOrderStatus(orderId, status) {
+    setOrders((current) =>
+      current.map((order) =>
+        order.orderId === orderId ? { ...order, status } : order
+      )
+    );
+  }
+
+  const totalSales = orders
+    .filter((order) => order.status !== 'Cancelled')
+    .reduce((sum, order) => sum + Number(order.total || 0), 0);
+
+  if (!loggedIn) {
+    return (
+      <main style={adminStyles.loginPage}>
+        <form style={adminStyles.loginBox} onSubmit={handleLogin}>
+          <h1>🍰 BYTES-BITES</h1>
+          <h2>Admin Login</h2>
+
+          <label>Admin Email</label>
+          <input
+            type="email"
+            required
+            style={adminStyles.input}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Admin email"
+          />
+
+          <label>Password</label>
+          <input
+            type="password"
+            required
+            style={adminStyles.input}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+          />
+
+          <button style={adminStyles.button}>Login</button>
+          <Link to="/" style={adminStyles.backLink}>Back to Website</Link>
+        </form>
+      </main>
+    );
+  }
+
+  return (
+    <div style={adminStyles.layout}>
+      <aside style={adminStyles.sidebar}>
+        <h2>🍰 BYTES-BITES</h2>
+        <p>ADMIN PANEL</p>
+
+        {['dashboard', 'products', 'orders', 'customers'].map((page) => (
+          <button
+            key={page}
+            onClick={() => setActivePage(page)}
+            style={{
+              ...adminStyles.menuButton,
+              background: activePage === page ? '#cd853f' : 'transparent'
+            }}
+          >
+            {page.charAt(0).toUpperCase() + page.slice(1)}
+          </button>
+        ))}
+
+        <Link to="/" style={adminStyles.sideLink}>Visit Website</Link>
+
+        <button onClick={logout} style={adminStyles.logoutButton}>
+          Logout
+        </button>
+      </aside>
+
+      <main style={adminStyles.content}>
+        <h1>
+          {activePage.charAt(0).toUpperCase() + activePage.slice(1)}
+        </h1>
+
+        {activePage === 'dashboard' && (
+          <div style={adminStyles.stats}>
+            <div style={adminStyles.statCard}>
+              <h3>Total Products</h3>
+              <h2>{productList.length}</h2>
+            </div>
+
+            <div style={adminStyles.statCard}>
+              <h3>Total Orders</h3>
+              <h2>{orders.length}</h2>
+            </div>
+
+            <div style={adminStyles.statCard}>
+              <h3>Total Customers</h3>
+              <h2>{customers.length}</h2>
+            </div>
+
+            <div style={adminStyles.statCard}>
+              <h3>Total Sales</h3>
+              <h2>Rs. {totalSales.toLocaleString('en-PK')}</h2>
+            </div>
+          </div>
+        )}
+
+        {activePage === 'products' && (
+          <>
+            <form style={adminStyles.form} onSubmit={saveProduct}>
+              <h2>{editingId ? 'Edit Product' : 'Add New Product'}</h2>
+
+              <input
+                style={adminStyles.input}
+                placeholder="Product Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+
+              <input
+                style={adminStyles.input}
+                type="number"
+                min="0"
+                placeholder="Price"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+              />
+
+              <input
+                style={adminStyles.input}
+                placeholder="Category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+              />
+
+              <textarea
+                style={adminStyles.input}
+                placeholder="Product Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+
+              <button style={adminStyles.button}>
+                {editingId ? 'Update Product' : 'Add Product'}
+              </button>
+
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={clearForm}
+                  style={adminStyles.cancelButton}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </form>
+
+            <h2>All Products</h2>
+
+            {productList.map((product) => (
+              <div key={product.id} style={adminStyles.listItem}>
+                <div>
+                  <strong>{product.name}</strong>
+                  <p>
+                    Rs. {product.price} | {product.category}
+                  </p>
+                </div>
+
+                <button onClick={() => editProduct(product)}>
+                  Edit
+                </button>
+
+                <button onClick={() => deleteProduct(product.id)}>
+                  Delete
+                </button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {activePage === 'orders' && (
+          <>
+            <h2>Customer Orders</h2>
+
+            {orders.length === 0 && <p>No orders yet.</p>}
+
+            {orders.map((order) => (
+              <div key={order.orderId} style={adminStyles.listItem}>
+                <div>
+                  <strong>Order #{order.orderId}</strong>
+                  <p>Customer: {order.customer?.name}</p>
+                  <p>Email: {order.customer?.email}</p>
+                  <p>Total: Rs. {order.total}</p>
+                  <p>Date: {order.orderDate}</p>
+                  <p>
+                    Items: {order.items?.map((item) =>
+                      `${item.name} x ${item.quantity}`
+                    ).join(', ')}
+                  </p>
+                </div>
+
+                <select
+                  style={adminStyles.input}
+                  value={order.status || 'Order Placed'}
+                  onChange={(e) =>
+                    updateOrderStatus(order.orderId, e.target.value)
+                  }
+                >
+                  <option>Order Placed</option>
+                  <option>Processing</option>
+                  <option>Shipped</option>
+                  <option>Delivered</option>
+                  <option>Cancelled</option>
+                </select>
+              </div>
+            ))}
+          </>
+        )}
+
+        {activePage === 'customers' && (
+          <>
+            <h2>Registered Customers</h2>
+
+            {customers.length === 0 && <p>No customers registered yet.</p>}
+
+            {customers.map((customer, index) => (
+              <div key={index} style={adminStyles.listItem}>
+                <div>
+                  <strong>{customer.name}</strong>
+                  <p>{customer.email}</p>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ================= ADMIN STYLES =================
+
+const adminStyles = {
+  loginPage: {
+    minHeight: '70vh',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    background: '#fff8f0',
+    padding: '30px'
+  },
+  loginBox: {
+    background: 'white',
+    padding: '35px',
+    borderRadius: '12px',
+    width: '100%',
+    maxWidth: '400px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    border: '1px solid #ead9c9'
+  },
+  layout: {
+    display: 'flex',
+    minHeight: '75vh',
+    background: '#fff8f0',
+    color: '#39251e',
+    flexWrap: 'wrap'
+  },
+  sidebar: {
+    width: '220px',
+    background: '#39251e',
+    color: 'white',
+    padding: '22px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  content: {
+    flex: 1,
+    padding: '30px',
+    minWidth: '250px'
+  },
+  stats: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+    gap: '15px'
+  },
+  statCard: {
+    background: 'white',
+    padding: '20px',
+    borderRadius: '10px',
+    border: '1px solid #ead9c9'
+  },
+  form: {
+    background: 'white',
+    padding: '20px',
+    borderRadius: '10px',
+    marginBottom: '25px',
+    maxWidth: '550px'
+  },
+  input: {
+    display: 'block',
+    width: '100%',
+    boxSizing: 'border-box',
+    padding: '11px',
+    margin: '10px 0',
+    border: '1px solid #ead9c9',
+    borderRadius: '6px'
+  },
+  button: {
+    background: '#75452f',
+    color: 'white',
+    padding: '12px',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+  menuButton: {
+    color: 'white',
+    border: 'none',
+    padding: '12px',
+    textAlign: 'left',
+    cursor: 'pointer',
+    borderRadius: '6px'
+  },
+  sideLink: {
+    color: 'white',
+    textDecoration: 'none',
+    padding: '12px'
+  },
+  logoutButton: {
+    background: '#cd853f',
+    color: 'white',
+    border: 'none',
+    padding: '12px',
+    cursor: 'pointer',
+    borderRadius: '6px',
+    marginTop: 'auto'
+  },
+  listItem: {
+    background: 'white',
+    border: '1px solid #ead9c9',
+    borderRadius: '8px',
+    padding: '15px',
+    margin: '12px 0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap'
+  },
+  cancelButton: {
+    padding: '10px',
+    marginLeft: '10px',
+    cursor: 'pointer'
+  },
+  backLink: {
+    textAlign: 'center',
+    color: '#75452f'
+  }
+};
 
 // ================= FOOTER =================
 
 function Footer() {
   return (
     <footer id="contact">
-
       <Link className="brand footer-brand" to="/">
         🍰 BYTES<span className="brand-highlight">-BITES</span>
       </Link>
@@ -1301,7 +1469,6 @@ function Footer() {
       </div>
 
       <span>© 2026 Bytes-Bites Bakery</span>
-
     </footer>
   );
 }
@@ -1309,55 +1476,44 @@ function Footer() {
 // ================= MAIN APP =================
 
 function App() {
+  const [cartItems, setCartItems] = useState(() =>
+    getSavedData('bakeryCart', [])
+  );
 
-  // Load saved cart from browser
+  const [productList, setProductList] = useState(() =>
+    getSavedData('bakeryAdminProducts', defaultProducts)
+  );
 
-  const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem('bakeryCart');
-
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
-
-  // Save cart whenever it changes
+  useEffect(() => {
+    localStorage.setItem('bakeryCart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   useEffect(() => {
     localStorage.setItem(
-      'bakeryCart',
-      JSON.stringify(cartItems)
+      'bakeryAdminProducts',
+      JSON.stringify(productList)
     );
-  }, [cartItems]);
-
-  // Add product to cart
+  }, [productList]);
 
   function addToCart(product) {
-
     setCartItems((items) => {
-
-      const existing = items.find(
-        (item) => item.id === product.id
-      );
+      const existing = items.find((item) => item.id === product.id);
 
       if (existing) {
-
         return items.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
-
       }
 
       return [...items, { ...product, quantity: 1 }];
-
     });
 
     alert(`${product.name} added to cart successfully!`);
   }
 
-  // Increase quantity
-
   function increaseQuantity(id) {
-
     setCartItems((items) =>
       items.map((item) =>
         item.id === id
@@ -1365,13 +1521,9 @@ function App() {
           : item
       )
     );
-
   }
 
-  // Decrease quantity
-
   function decreaseQuantity(id) {
-
     setCartItems((items) =>
       items
         .map((item) =>
@@ -1381,30 +1533,19 @@ function App() {
         )
         .filter((item) => item.quantity > 0)
     );
-
   }
-
-  // Total cart quantity
 
   const cartCount = cartItems.reduce(
     (sum, item) => sum + item.quantity,
     0
   );
 
-  // Check login before checkout
-
   function goToCheckout() {
-
-    const loggedInUser = localStorage.getItem(
-      'bakeryLoggedInUser'
-    );
+    const loggedInUser = localStorage.getItem('bakeryLoggedInUser');
 
     if (!loggedInUser) {
-
       alert('Please login first to place your order.');
-
       window.location.href = '/login';
-
       return;
     }
 
@@ -1413,29 +1554,27 @@ function App() {
 
   return (
     <div className="bakery">
-
       <Header cartCount={cartCount} />
 
       <Routes>
-
         <Route
           path="/"
           element={
-            <HomePage onAdd={addToCart} />
+            <HomePage productList={productList} onAdd={addToCart} />
           }
         />
 
         <Route
           path="/shop"
           element={
-            <ShopPage onAdd={addToCart} />
+            <ShopPage productList={productList} onAdd={addToCart} />
           }
         />
 
         <Route
           path="/product/:id"
           element={
-            <ProductPage onAdd={addToCart} />
+            <ProductPage productList={productList} onAdd={addToCart} />
           }
         />
 
@@ -1468,8 +1607,16 @@ function App() {
 
         <Route
           path="/checkout"
+          element={<CheckoutPage cartItems={cartItems} />}
+        />
+
+        <Route
+          path="/admin"
           element={
-            <CheckoutPage cartItems={cartItems} />
+            <AdminPanel
+              productList={productList}
+              setProductList={setProductList}
+            />
           }
         />
 
@@ -1488,38 +1635,29 @@ function App() {
           path="/contact"
           element={
             <SimplePage title="Contact Us">
-              <p>
-                <div>
-  <h2>BYTES-BITES BAKERY</h2>
-
-  <p>
-    <strong>Address:</strong> Lahore, Punjab, Pakistan
-    <br />
-
-    <strong>Phone:</strong> +92 300 1234567
-    <br />
-
-    <strong>Email:</strong> bytesbitesbakery@gmail.com
-    <br />
-
-    <strong>Opening Hours:</strong>
-    <br />
-    Monday – Saturday: 9:00 AM – 10:00 PM
-    <br />
-    Sunday: 10:00 AM – 8:00 PM
-    <br />
-
-    <strong>Follow Us:</strong> Instagram | Facebook
-    <br />
-
-    <strong>Message:</strong>
-    <br />
-    Have a question or want to place a custom cake order?
-    <br />
-    Contact us and we'll be happy to help!
-  </p>
-</div>
-              </p>
+              <div>
+                <h2>BYTES-BITES BAKERY</h2>
+                <p>
+                  <strong>Address:</strong> Lahore, Punjab, Pakistan
+                  <br />
+                  <strong>Phone:</strong> +92 300 1234567
+                  <br />
+                  <strong>Email:</strong> bytesbitesbakery@gmail.com
+                  <br />
+                  <strong>Opening Hours:</strong>
+                  <br />
+                  Monday – Saturday: 9:00 AM – 10:00 PM
+                  <br />
+                  Sunday: 10:00 AM – 8:00 PM
+                  <br />
+                  <strong>Follow Us:</strong> Instagram | Facebook
+                  <br />
+                  <strong>Message:</strong>
+                  <br />
+                  Have a question or want to place a custom cake order?
+                  Contact us and we'll be happy to help!
+                </p>
+              </div>
             </SimplePage>
           }
         />
@@ -1532,11 +1670,9 @@ function App() {
             </SimplePage>
           }
         />
-
       </Routes>
 
       <Footer />
-
     </div>
   );
 }
