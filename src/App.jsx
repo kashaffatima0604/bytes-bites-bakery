@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from 'react';
+
 import {
   Link,
   NavLink,
@@ -6,6 +8,7 @@ import {
   Routes,
   useLocation,
   useParams,
+  useNavigate,
 } from 'react-router-dom';
 
 import { products, categories } from './data/products.js';
@@ -59,6 +62,7 @@ function Header({ cartCount }) {
 
         {menuOpen && (
           <div className="dropdown-menu">
+
             {categories.map((category) => (
               <Link
                 key={category}
@@ -72,6 +76,7 @@ function Header({ cartCount }) {
                 {category}
               </Link>
             ))}
+
           </div>
         )}
 
@@ -89,7 +94,10 @@ function HomePage({ onAdd }) {
       <section className="hero-section">
 
         <div className="hero-content">
-          <span className="eyebrow">♡ BAKED FRESH DAILY ♡</span>
+
+          <span className="eyebrow">
+            ♡ BAKED FRESH DAILY ♡
+          </span>
 
           <h1>
             A Little Slice
@@ -105,6 +113,7 @@ function HomePage({ onAdd }) {
           <Link className="primary-btn" to="/shop">
             Explore Our Bakery ↗
           </Link>
+
         </div>
 
         <div className="hero-art">
@@ -158,6 +167,7 @@ function ProductGrid({ products: list, onAdd }) {
             style={{ backgroundColor: product.color }}
             to={`/product/${product.id}`}
           >
+
             {product.image && (
               <img
                 src={product.image}
@@ -167,6 +177,7 @@ function ProductGrid({ products: list, onAdd }) {
             )}
 
             <span className="product-tag">FRESH</span>
+
           </Link>
 
           <div className="product-info">
@@ -211,6 +222,7 @@ function ProductGrid({ products: list, onAdd }) {
 
 function ShopPage({ onAdd }) {
   const location = useLocation();
+
   const params = new URLSearchParams(location.search);
 
   const requestedCategory =
@@ -240,13 +252,12 @@ function ShopPage({ onAdd }) {
   function chooseCategory(item) {
     setCategory(item);
 
-    window.history.replaceState(
-      {},
-      '',
+    const newUrl =
       item === 'All Products'
         ? '/shop'
-        : `/shop?category=${encodeURIComponent(item)}`
-    );
+        : `/shop?category=${encodeURIComponent(item)}`;
+
+    window.history.replaceState({}, '', newUrl);
   }
 
   function applyPriceFilter() {
@@ -281,6 +292,7 @@ function ShopPage({ onAdd }) {
 
     setMinPrice('');
     setMaxPrice('');
+
     setAppliedMin('');
     setAppliedMax('');
 
@@ -317,7 +329,9 @@ function ShopPage({ onAdd }) {
     .sort((a, b) => {
 
       if (sort === 'low') return a.price - b.price;
+
       if (sort === 'high') return b.price - a.price;
+
       if (sort === 'name') {
         return a.name.localeCompare(b.name);
       }
@@ -329,20 +343,22 @@ function ShopPage({ onAdd }) {
     <main className="shop-section page-section">
 
       <div className="section-heading">
-        <span className="eyebrow">FRESH FROM OUR BAKERY</span>
+
+        <span className="eyebrow">
+          FRESH FROM OUR BAKERY
+        </span>
+
         <h1>Shop <span>All Treats</span></h1>
+
         <p>Find your next favourite sweet treat.</p>
+
       </div>
 
       <div className="shop-layout">
 
-        {/* LEFT SIDEBAR */}
-
         <aside className="shop-sidebar">
 
           <h2>Filter Products</h2>
-
-          {/* CATEGORIES */}
 
           <div className="filter-box">
 
@@ -375,8 +391,6 @@ function ShopPage({ onAdd }) {
             )}
 
           </div>
-
-          {/* PRICE RANGE */}
 
           <div className="filter-box">
 
@@ -439,8 +453,6 @@ function ShopPage({ onAdd }) {
 
         </aside>
 
-        {/* PRODUCTS AREA */}
-
         <div className="shop-products-area">
 
           <div className="shop-toolbar">
@@ -485,7 +497,9 @@ function ShopPage({ onAdd }) {
           ) : (
 
             <div className="empty-results">
+
               <h3>No products found</h3>
+
               <p>Try another category or price range.</p>
 
               <button
@@ -495,6 +509,7 @@ function ShopPage({ onAdd }) {
               >
                 Clear Filters
               </button>
+
             </div>
 
           )}
@@ -519,10 +534,13 @@ function ProductPage({ onAdd }) {
   if (!product) {
     return (
       <main className="page-section">
+
         <h1>Product not found</h1>
+
         <Link className="primary-btn" to="/shop">
           Back to Shop
         </Link>
+
       </main>
     );
   }
@@ -534,6 +552,7 @@ function ProductPage({ onAdd }) {
         className="detail-image"
         style={{ backgroundColor: product.color }}
       >
+
         {product.image && (
           <img
             src={product.image}
@@ -541,6 +560,7 @@ function ProductPage({ onAdd }) {
             className="product-photo"
           />
         )}
+
       </div>
 
       <div className="detail-info">
@@ -611,6 +631,21 @@ function CustomCakePage() {
       return;
     }
 
+    const customCakeRequest = {
+      icingColor,
+      flavour,
+      theme,
+      toppers,
+      message,
+      imageNames: referenceImages.map((file) => file.name),
+      requestDate: new Date().toLocaleString()
+    };
+
+    localStorage.setItem(
+      'bakeryCustomCakeRequest',
+      JSON.stringify(customCakeRequest)
+    );
+
     setSubmitted(true);
   }
 
@@ -618,9 +653,17 @@ function CustomCakePage() {
     <main className="page-section custom-cake-page">
 
       <div className="section-heading">
-        <span className="eyebrow">DESIGN YOUR DREAM CAKE</span>
+
+        <span className="eyebrow">
+          DESIGN YOUR DREAM CAKE
+        </span>
+
         <h1>Customize Your <span>Cake</span></h1>
-        <p>Create a cake that matches your special occasion!</p>
+
+        <p>
+          Create a cake that matches your special occasion!
+        </p>
+
       </div>
 
       {submitted ? (
@@ -629,11 +672,13 @@ function CustomCakePage() {
 
           <h2>Thank You! 🎂</h2>
 
-          <p>Your custom cake request has been prepared successfully.</p>
+          <p>
+            Your custom cake request has been saved in this browser.
+          </p>
 
           <p>
-            This is a frontend demo. Your request has not been
-            saved to a database.
+            This is a frontend demo. The request is not yet sent
+            to the bakery or saved in a database.
           </p>
 
           <button
@@ -662,6 +707,7 @@ function CustomCakePage() {
             Choose Icing Color
 
             <div className="color-picker">
+
               <input
                 type="color"
                 value={icingColor}
@@ -669,6 +715,7 @@ function CustomCakePage() {
               />
 
               <span>{icingColor}</span>
+
             </div>
           </label>
 
@@ -750,6 +797,7 @@ function CustomCakePage() {
               placeholder="Example: Happy Birthday!"
               required
             />
+
           </label>
 
           <label>
@@ -762,6 +810,7 @@ function CustomCakePage() {
               required
               onChange={handleImages}
             />
+
           </label>
 
           {referenceImages.length > 0 && (
@@ -813,7 +862,9 @@ function SimplePage({ title, children }) {
   return (
     <main className="page-section simple-page">
 
-      <span className="eyebrow">BYTES-BITES BAKERY</span>
+      <span className="eyebrow">
+        BYTES-BITES BAKERY
+      </span>
 
       <h1>{title}</h1>
 
@@ -826,46 +877,128 @@ function SimplePage({ title, children }) {
 // ================= LOGIN AND SIGNUP =================
 
 function AuthPage({ signup = false }) {
+  const navigate = useNavigate();
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  function handleAuth(e) {
+    e.preventDefault();
+
+    const users = JSON.parse(
+      localStorage.getItem('bakeryUsers') || '[]'
+    );
+
+    if (signup) {
+
+      const existingUser = users.find(
+        (user) => user.email.toLowerCase() === email.toLowerCase()
+      );
+
+      if (existingUser) {
+        alert('This email is already registered. Please login.');
+        return;
+      }
+
+      const newUser = {
+        name: name,
+        email: email,
+        password: password
+      };
+
+      users.push(newUser);
+
+      localStorage.setItem(
+        'bakeryUsers',
+        JSON.stringify(users)
+      );
+
+      localStorage.setItem(
+        'bakeryLoggedInUser',
+        JSON.stringify({
+          name: name,
+          email: email
+        })
+      );
+
+      alert('Account created successfully!');
+
+      navigate('/shop');
+
+    } else {
+
+      const user = users.find(
+        (item) =>
+          item.email.toLowerCase() === email.toLowerCase() &&
+          item.password === password
+      );
+
+      if (!user) {
+        alert('Invalid email or password. Please try again.');
+        return;
+      }
+
+      localStorage.setItem(
+        'bakeryLoggedInUser',
+        JSON.stringify({
+          name: user.name,
+          email: user.email
+        })
+      );
+
+      alert('Login successful!');
+
+      navigate('/shop');
+    }
+  }
+
   return (
     <SimplePage
       title={signup ? 'Create Your Account' : 'Welcome Back'}
     >
 
-      <form
-        className="auth-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-
-          alert(
-            'Authentication will be connected to the PHP backend in a later step.'
-          );
-        }}
-      >
+      <form className="auth-form" onSubmit={handleAuth}>
 
         {signup && (
           <label>
             Full Name
-            <input required placeholder="Your full name" />
+
+            <input
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your full name"
+            />
+
           </label>
         )}
 
         <label>
           Email Address
+
           <input
             required
             type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
+
         </label>
 
         <label>
           Password
+
           <input
             required
             type="password"
             minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 8 characters"
           />
+
         </label>
 
         <button className="primary-btn" type="submit">
@@ -880,6 +1013,7 @@ function AuthPage({ signup = false }) {
           <Link to={signup ? '/login' : '/signup'}>
             {signup ? 'Login' : 'Sign Up'}
           </Link>
+
         </p>
 
       </form>
@@ -890,7 +1024,12 @@ function AuthPage({ signup = false }) {
 
 // ================= CART PAGE =================
 
-function CartPage({ cartItems, onIncrease, onDecrease }) {
+function CartPage({
+  cartItems,
+  onIncrease,
+  onDecrease,
+  onCheckout
+}) {
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -902,7 +1041,9 @@ function CartPage({ cartItems, onIncrease, onDecrease }) {
       {cartItems.length === 0 ? (
 
         <>
-          <p>Your cart is empty. Let's find something sweet!</p>
+          <p>
+            Your cart is empty. Let's find something sweet!
+          </p>
 
           <Link className="primary-btn" to="/shop">
             Start Shopping
@@ -922,10 +1063,13 @@ function CartPage({ cartItems, onIncrease, onDecrease }) {
                 <span>{item.emoji || '🍰'}</span>
 
                 <div>
+
                   <strong>{item.name}</strong>
+
                   <p>
                     Rs. {item.price.toLocaleString('en-PK')}
                   </p>
+
                 </div>
 
                 <button
@@ -958,9 +1102,13 @@ function CartPage({ cartItems, onIncrease, onDecrease }) {
             Total: Rs. {total.toLocaleString('en-PK')}
           </h2>
 
-          <Link className="primary-btn" to="/checkout">
+          <button
+            className="primary-btn"
+            type="button"
+            onClick={onCheckout}
+          >
             Proceed to Checkout →
-          </Link>
+          </button>
 
         </>
 
@@ -973,10 +1121,76 @@ function CartPage({ cartItems, onIncrease, onDecrease }) {
 // ================= CHECKOUT PAGE =================
 
 function CheckoutPage({ cartItems }) {
+  const navigate = useNavigate();
+
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const loggedInUser = JSON.parse(
+    localStorage.getItem('bakeryLoggedInUser') || 'null'
+  );
+
+  function placeOrder(e) {
+    e.preventDefault();
+
+    if (!loggedInUser) {
+      alert('Please login first to place your order.');
+      navigate('/login');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert('Your cart is empty.');
+      navigate('/shop');
+      return;
+    }
+
+    const order = {
+      orderId: Date.now(),
+      customer: loggedInUser,
+      items: cartItems,
+      total: total,
+      orderDate: new Date().toLocaleString(),
+      status: 'Order Placed'
+    };
+
+    const previousOrders = JSON.parse(
+      localStorage.getItem('bakeryOrders') || '[]'
+    );
+
+    previousOrders.push(order);
+
+    localStorage.setItem(
+      'bakeryOrders',
+      JSON.stringify(previousOrders)
+    );
+
+    localStorage.removeItem('bakeryCart');
+
+    alert(
+      'Your order has been placed successfully! Thank you for shopping with Bytes-Bites Bakery.'
+    );
+
+    window.location.href = '/';
+  }
+
+  if (!loggedInUser) {
+    return (
+      <SimplePage title="Login Required">
+
+        <p>
+          Please login before placing your order.
+        </p>
+
+        <Link className="primary-btn" to="/login">
+          Login Now
+        </Link>
+
+      </SimplePage>
+    );
+  }
 
   return (
     <SimplePage title="Checkout">
@@ -995,35 +1209,52 @@ function CheckoutPage({ cartItems }) {
 
         <form
           className="auth-form checkout-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-
-            alert(
-              'Order submission will be connected to PHP/MySQL in a later step.'
-            );
-          }}
+          onSubmit={placeOrder}
         >
 
           <h2>Delivery Details</h2>
 
           <label>
             Full Name
-            <input required autoComplete="name" />
+
+            <input
+              required
+              defaultValue={loggedInUser.name}
+            />
+
           </label>
 
           <label>
             Email
-            <input required type="email" autoComplete="email" />
+
+            <input
+              required
+              type="email"
+              defaultValue={loggedInUser.email}
+            />
+
           </label>
 
           <label>
             Phone Number
-            <input required type="tel" autoComplete="tel" />
+
+            <input
+              required
+              type="tel"
+              autoComplete="tel"
+            />
+
           </label>
 
           <label>
             Delivery Address
-            <textarea required rows="3" autoComplete="street-address" />
+
+            <textarea
+              required
+              rows="3"
+              autoComplete="street-address"
+            />
+
           </label>
 
           <label>
@@ -1032,6 +1263,7 @@ function CheckoutPage({ cartItems }) {
             <select defaultValue="cod">
               <option value="cod">Cash on Delivery</option>
             </select>
+
           </label>
 
           <h2>
@@ -1077,9 +1309,28 @@ function Footer() {
 // ================= MAIN APP =================
 
 function App() {
-  const [cartItems, setCartItems] = useState([]);
+
+  // Load saved cart from browser
+
+  const [cartItems, setCartItems] = useState(() => {
+    const savedCart = localStorage.getItem('bakeryCart');
+
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
+
+  // Save cart whenever it changes
+
+  useEffect(() => {
+    localStorage.setItem(
+      'bakeryCart',
+      JSON.stringify(cartItems)
+    );
+  }, [cartItems]);
+
+  // Add product to cart
 
   function addToCart(product) {
+
     setCartItems((items) => {
 
       const existing = items.find(
@@ -1087,18 +1338,26 @@ function App() {
       );
 
       if (existing) {
+
         return items.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
+
       }
 
       return [...items, { ...product, quantity: 1 }];
+
     });
+
+    alert(`${product.name} added to cart successfully!`);
   }
 
+  // Increase quantity
+
   function increaseQuantity(id) {
+
     setCartItems((items) =>
       items.map((item) =>
         item.id === id
@@ -1106,9 +1365,13 @@ function App() {
           : item
       )
     );
+
   }
 
+  // Decrease quantity
+
   function decreaseQuantity(id) {
+
     setCartItems((items) =>
       items
         .map((item) =>
@@ -1118,12 +1381,35 @@ function App() {
         )
         .filter((item) => item.quantity > 0)
     );
+
   }
+
+  // Total cart quantity
 
   const cartCount = cartItems.reduce(
     (sum, item) => sum + item.quantity,
     0
   );
+
+  // Check login before checkout
+
+  function goToCheckout() {
+
+    const loggedInUser = localStorage.getItem(
+      'bakeryLoggedInUser'
+    );
+
+    if (!loggedInUser) {
+
+      alert('Please login first to place your order.');
+
+      window.location.href = '/login';
+
+      return;
+    }
+
+    window.location.href = '/checkout';
+  }
 
   return (
     <div className="bakery">
@@ -1134,17 +1420,23 @@ function App() {
 
         <Route
           path="/"
-          element={<HomePage onAdd={addToCart} />}
+          element={
+            <HomePage onAdd={addToCart} />
+          }
         />
 
         <Route
           path="/shop"
-          element={<ShopPage onAdd={addToCart} />}
+          element={
+            <ShopPage onAdd={addToCart} />
+          }
         />
 
         <Route
           path="/product/:id"
-          element={<ProductPage onAdd={addToCart} />}
+          element={
+            <ProductPage onAdd={addToCart} />
+          }
         />
 
         <Route
@@ -1152,7 +1444,10 @@ function App() {
           element={<CustomCakePage />}
         />
 
-        <Route path="/login" element={<AuthPage />} />
+        <Route
+          path="/login"
+          element={<AuthPage />}
+        />
 
         <Route
           path="/signup"
@@ -1166,13 +1461,16 @@ function App() {
               cartItems={cartItems}
               onIncrease={increaseQuantity}
               onDecrease={decreaseQuantity}
+              onCheckout={goToCheckout}
             />
           }
         />
 
         <Route
           path="/checkout"
-          element={<CheckoutPage cartItems={cartItems} />}
+          element={
+            <CheckoutPage cartItems={cartItems} />
+          }
         />
 
         <Route
