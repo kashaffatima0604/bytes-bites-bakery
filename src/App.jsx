@@ -1489,24 +1489,36 @@ function App() {
           element={
             <SimplePage title="Contact Us">
               <p>
-                 
-**BYTES-BITES BAKERY**
+                <div>
+  <h2>BYTES-BITES BAKERY</h2>
 
-**Address:** Lahore, Punjab, Pakistan
+  <p>
+    <strong>Address:</strong> Lahore, Punjab, Pakistan
+    <br />
 
-**Phone:** +92 300 1234567  
-*(Demo number — apna actual ya business contact number use karna.)*
+    <strong>Phone:</strong> +92 300 1234567
+    <br />
 
-**Email:** bytesbitesbakery@gmail.com  
-*(Agar ye email available nahi hai, apni existing business/project email use karna.)*
+    <strong>Email:</strong> bytesbitesbakery@gmail.com
+    <br />
 
-**Opening Hours:**
-- Monday – Saturday: 9:00 AM – 10:00 PM
-- Sunday: 10:00 AM – 8:00 PM
+    <strong>Opening Hours:</strong>
+    <br />
+    Monday – Saturday: 9:00 AM – 10:00 PM
+    <br />
+    Sunday: 10:00 AM – 8:00 PM
+    <br />
 
-**Follow Us:** Instagram | Facebook
+    <strong>Follow Us:</strong> Instagram | Facebook
+    <br />
 
-**Message:** Have a question or want to place a custom cake order? Contact us and we'll be happy to help!
+    <strong>Message:</strong>
+    <br />
+    Have a question or want to place a custom cake order?
+    <br />
+    Contact us and we'll be happy to help!
+  </p>
+</div>
               </p>
             </SimplePage>
           }
