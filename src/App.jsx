@@ -1489,7 +1489,24 @@ function App() {
           element={
             <SimplePage title="Contact Us">
               <p>
-                We would love to hear from you. Contact details will be added here.
+                 
+**BYTES-BITES BAKERY**
+
+**Address:** Lahore, Punjab, Pakistan
+
+**Phone:** +92 300 1234567  
+*(Demo number — apna actual ya business contact number use karna.)*
+
+**Email:** bytesbitesbakery@gmail.com  
+*(Agar ye email available nahi hai, apni existing business/project email use karna.)*
+
+**Opening Hours:**
+- Monday – Saturday: 9:00 AM – 10:00 PM
+- Sunday: 10:00 AM – 8:00 PM
+
+**Follow Us:** Instagram | Facebook
+
+**Message:** Have a question or want to place a custom cake order? Contact us and we'll be happy to help!
               </p>
             </SimplePage>
           }
